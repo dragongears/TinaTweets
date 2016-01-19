@@ -2,8 +2,7 @@ var SerialPort = require("serialport").SerialPort;
 var Twit = require('twit');
 
 var sp = new SerialPort("/dev/ttyACM0", {
-    baudRate: 9600,
-    rtscts: false
+    baudRate: 115200
 });
 
 var T = new Twit({
@@ -26,7 +25,12 @@ sp.on('open',function() {
         console.log('>>>>>', data);
     });
 
-    sp.write("\xFE\x58");
+    sp.write([0xFE,0x58]);
+    sp.write([0xFE,0x47,0x01,0x02]);
+    sp.write("Tina tweets");
+
+    sp.write([0xFE,0x48]);
+    sp.write("Test tweet");
 
     //stream.on('tweet', function (tweet) {
     //    //console.log('');
