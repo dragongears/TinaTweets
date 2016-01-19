@@ -14,23 +14,33 @@ var T = new Twit({
 
 var stream = T.stream('statuses/filter', {follow: '612043406'});
 
-//T.get('statuses/user_timeline', {user_id: '612043406', count: 3} , function(err, data) {
-//    for (var i = 0; i < data.length ; i++) {
-//        console.log(data[i].text);
-//    }
-//});
+var tweets = [];
+var current = 0;
+var count;
+
+function displayTweets() {
+    sp.write([0xFE,0x58]);
+    sp.write([0xFE,0x47,0x01,0x02]);
+    sp.write("Tina tweets");
+
+    displayTweet(tweets[current], done);
+}
 
 sp.on('open',function() {
     sp.on('data', function(data) {
         console.log('>>>>>', data);
     });
 
-    sp.write([0xFE,0x58]);
-    sp.write([0xFE,0x47,0x01,0x02]);
-    sp.write("Tina tweets");
+    T.get('statuses/user_timeline', {user_id: '612043406', count: 3} , function(err, data) {
+        for (var i = 0; i < data.length ; i++) {
+            console.log(data[i].text);
+            tweets.push(data[i].text);
+        }
 
-    sp.write([0xFE,0x48]);
-    sp.write("Test tweet");
+        count = tweets.length-1;
+        displayTweets();
+    });
+
 
     //stream.on('tweet', function (tweet) {
     //    //console.log('');
@@ -43,3 +53,31 @@ sp.on('open',function() {
     //    //console.dir(tweet);
     //});
 });
+
+function displayTweet(tweet, done) {
+    tweet += "                ";
+    var index = 0;
+    var max = tweet.length-16;
+    displayPart(tweet, index, max, done);
+}
+
+function displayPart(tweet, index, max, done) {
+    sp.write([0xFE,0x48]);
+    sp.write(tweet.substr(index, 15));
+    index++;
+    if (index <= max) {
+        setTimeout(displayPart, 300, tweet, index, max, done);
+    } else {
+        done();
+    }
+}
+
+function done() {
+    if (current >= count) {
+        current = 0;
+    } else {
+        current++;
+    }
+
+    displayTweet(tweets[current], done);
+}
