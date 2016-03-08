@@ -1,5 +1,6 @@
 var SerialPort = require("serialport").SerialPort;
 var Twit = require('twit');
+var Tweets = require('./tweets.js');
 
 var sp = new SerialPort("/dev/ttyACM0", {
     baudRate: 115200
@@ -14,70 +15,51 @@ var T = new Twit({
 
 var stream = T.stream('statuses/filter', {follow: '612043406'});
 
-var tweets = [];
-var current = 0;
-var count;
+var tweets = new Tweets(sp);
+console.dir(tweets);
 
-function displayTweets() {
-    sp.write([0xFE,0x58]);
-    sp.write([0xFE,0x47,0x01,0x02]);
-    sp.write("Tina tweets");
+tweets.on('tweetDone', function() {
+    //console.log('tweetDone!');
+    var func = tweets.displayTweet.bind(tweets);
+    setTimeout(func, 3);
+});
 
-    displayTweet(tweets[current], done);
-}
-
+// Open serial port
 sp.on('open',function() {
+
+    // Data from serial (should never happen)
     sp.on('data', function(data) {
         console.log('>>>>>', data);
     });
 
-    T.get('statuses/user_timeline', {user_id: '612043406', count: 3} , function(err, data) {
-        for (var i = 0; i < data.length ; i++) {
-            console.log(data[i].text);
-            tweets.push(data[i].text);
-        }
 
-        count = tweets.length-1;
-        displayTweets();
+    // Get some tweets to start
+    T.get('statuses/user_timeline', {user_id: '612043406', count: 20} , function(err, data) {
+        var arr = [];
+
+        // Filter out tweets with URLs
+        arr = data.filter(function(tweet){
+            return tweets.isUsable(tweet.text);
+        });
+
+        // Take only the three most recent tweets
+        arr = arr.slice(arr.length - 3);
+
+        arr.forEach(function (dataElement) {
+            console.log(dataElement.text);
+            tweets.push(dataElement.text.replace(/[\n\r]/g, ' ').replace(/’/g, '\'').replace(/“/g, '"').replace(/”/g, '"'));
+        });
+
+        tweets.display(sp);
+
     });
 
+    // Add new tweets
+    stream.on('tweet', function (tweet) {
+        if (tweets.isUsable(tweet.text)) {
+            console.log(tweet.text);
+            tweets.push(tweet.text);
+        }
+    });
 
-    //stream.on('tweet', function (tweet) {
-    //    //console.log('');
-    //    console.log(tweet.text + ' (' + tweet.user.screen_name  + ')');
-    //    //console.dir(tweet);
-    //    sp.write(tweet.text, function() {
-    //        console.log('Serial write');
-    //    });
-    //    console.log('');
-    //    //console.dir(tweet);
-    //});
 });
-
-function displayTweet(tweet, done) {
-    tweet += "                ";
-    var index = 0;
-    var max = tweet.length-16;
-    displayPart(tweet, index, max, done);
-}
-
-function displayPart(tweet, index, max, done) {
-    sp.write([0xFE,0x48]);
-    sp.write(tweet.substr(index, 15));
-    index++;
-    if (index <= max) {
-        setTimeout(displayPart, 300, tweet, index, max, done);
-    } else {
-        done();
-    }
-}
-
-function done() {
-    if (current >= count) {
-        current = 0;
-    } else {
-        current++;
-    }
-
-    displayTweet(tweets[current], done);
-}
