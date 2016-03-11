@@ -10,13 +10,10 @@ var Tweets = function(sp) {
     this.sp = sp;
 
     this.tweetList = [];
-    this.count = 0;
     this.current = 0;
 
     this.index = 0;
     this.max = 0;
-
-    //this.tweetcount = 0;
 };
 
 // extend the EventEmitter class using our Tweets class
@@ -27,9 +24,12 @@ Tweets.prototype.isUsable = function(text) {
     return (!new RegExp("([a-zA-Z0-9]+://)?([a-zA-Z0-9_]+:[a-zA-Z0-9_]+@)?([a-zA-Z0-9.-]+\\.[A-Za-z]{2,4})(:[0-9]+)?(/.*)?").test(text)) && (text.indexOf("@tinatbh") == -1);
 };
 
+Tweets.prototype.sanitize = function(text) {
+    return text.replace(/[\n\r]/g, ' ').replace(/…/g, '...').replace(/’/g, '\'').replace(/“/g, '"').replace(/”/g, '"');
+};
+
 Tweets.prototype.push = function(text) {
     this.tweetList.push(text);
-    this.count++;
 };
 
 Tweets.prototype.display = function() {
@@ -65,14 +65,17 @@ Tweets.prototype.displayPart = function(tweet, index, max) {
     if (index <= max) {
         setTimeout(func, timeout, tweet, index, max);
     } else {
-        if (this.current >= this.count-1) {
+
+        // if any tweets were pushed, bring total back down
+        while (this.tweetList.length > 3) {
+            this.tweetList.shift();
+        }
+
+        if (this.current >= this.tweetList.length-1) {
             this.current = 0;
         } else {
             this.current++;
         }
-
-        //this.tweetcount++;
-        //console.log('tweetcount ' + this.tweetcount);
 
         this.emit('tweetDone', 'Tweet done!');
     }

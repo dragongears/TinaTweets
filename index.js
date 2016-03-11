@@ -47,7 +47,7 @@ sp.on('open',function() {
 
         arr.forEach(function (dataElement) {
             console.log(dataElement.text);
-            tweets.push(dataElement.text.replace(/[\n\r]/g, ' ').replace(/’/g, '\'').replace(/“/g, '"').replace(/”/g, '"'));
+            tweets.push(tweets.sanitize(dataElement.text));
         });
 
         tweets.display(sp);
@@ -57,8 +57,9 @@ sp.on('open',function() {
     // Add new tweets
     stream.on('tweet', function (tweet) {
         if (tweets.isUsable(tweet.text)) {
+            tweets.push(tweets.sanitize(tweet.text));
+
             console.log(tweet.text);
-            tweets.push(tweet.text);
         }
     });
 
