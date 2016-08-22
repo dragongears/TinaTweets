@@ -5,7 +5,7 @@ var Tweets = function(sp) {
 
     // we need to store the reference of `this` to `self`, so that we can use the current context in the setTimeout (or any callback) functions
     // using `this` in the setTimeout functions will refer to those functions, not the Tweets class
-    var self = this;
+    // var self = this;
 
     this.sp = sp;
 
