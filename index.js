@@ -1,4 +1,4 @@
-var SerialPort = require("serialport").SerialPort;
+var SerialPort = require("serialport");
 var Twit = require('twit');
 var Tweets = require('./tweets.js');
 
